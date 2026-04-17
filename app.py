@@ -61,11 +61,6 @@ st.write("Enter the transaction description below to analyze it for potential fr
 # Get user input
 txn_text = st.text_input("Transaction Description / Notes")
 
-# NOTE: Numerical inputs commented out because the model was only trained on SBERT text embeddings!
-# amount = st.number_input("Transaction Amount", min_value=0.0)
-# sender_age = st.number_input("Sender Age", min_value=18, max_value=100)
-# receiver_age = st.number_input("Receiver Age", min_value=18, max_value=100)
-
 if st.button("Predict"):
     if not txn_text.strip():
         st.warning("Please enter a transaction description first.")
@@ -88,16 +83,17 @@ if st.button("Predict"):
             fraud_encoder = label_encoders['fraud_flag']
             txn_encoder = label_encoders['transaction_type']
             
-            fraud_result_string = fraud_encoder.inverse_transform([fraud_pred])[0]
-            txn_result_string = txn_encoder.inverse_transform([txn_pred])[0]
+            # Convert to string to safely handle both text ("Normal") and numeric ("0") label variants
+            fraud_result_string = str(fraud_encoder.inverse_transform([fraud_pred])[0])
+            txn_result_string = str(txn_encoder.inverse_transform([txn_pred])[0])
             
-            # Display Results using the dynamically decoded strings
+            # Display Results
             st.subheader("Results:")
             
-            # Color coding for Fraud!
-            if fraud_result_string == "Fraud":
-                st.error(f"**Fraud Status:** {fraud_result_string} 🚨")
+            # Catch the '0' or '1' and force it to display the correct word
+            if fraud_result_string == "0" or fraud_result_string.lower() == "normal":
+                st.success("**Fraud Status:** Normal ✅")
             else:
-                st.success(f"**Fraud Status:** {fraud_result_string} ✅")
+                st.error("**Fraud Status:** Fraud 🚨")
                 
             st.info(f"**Transaction Type:** {txn_result_string}")
