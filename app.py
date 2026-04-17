@@ -16,8 +16,8 @@ nltk.download('wordnet', quiet=True)
 # 1. LOAD MODELS (Use st.cache_resource so they only load once)
 @st.cache_resource
 def load_models():
-    # Downsize to MiniLM for free deployment (uses less RAM than mpnet)
-    model_name = 'sentence-transformers/all-MiniLM-L6-v2' 
+    # Using the original model to match the 768 feature dimensions
+    model_name = 'sentence-transformers/all-mpnet-base-v2'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     sbert_model = AutoModel.from_pretrained(model_name)
     
