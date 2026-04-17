@@ -56,41 +56,48 @@ def get_sbert_embedding(text):
 
 # 3. BUILD THE UI
 st.title("UPI Transaction Fraud & Type Classifier")
+st.write("Enter the transaction description below to analyze it for potential fraud and categorize the transaction type.")
 
 # Get user input
 txn_text = st.text_input("Transaction Description / Notes")
-amount = st.number_input("Transaction Amount", min_value=0.0)
-sender_age = st.number_input("Sender Age", min_value=18, max_value=100)
-receiver_age = st.number_input("Receiver Age", min_value=18, max_value=100)
+
+# NOTE: Numerical inputs commented out because the model was only trained on SBERT text embeddings!
+# amount = st.number_input("Transaction Amount", min_value=0.0)
+# sender_age = st.number_input("Sender Age", min_value=18, max_value=100)
+# receiver_age = st.number_input("Receiver Age", min_value=18, max_value=100)
 
 if st.button("Predict"):
-    with st.spinner("Analyzing transaction..."):
-        # Process input
-        cleaned_text = clean_text(txn_text)
-        text_features = get_sbert_embedding(cleaned_text)
-        
-        # Combine text features with numerical features
-        numeric_features = np.array([[amount, sender_age, receiver_age]]) 
-        final_features = np.hstack((text_features, numeric_features))
-        
-        # Predict (Returns the encoded numerical class)
-        fraud_pred = fraud_model.predict(final_features)[0]
-        txn_pred = txn_model.predict(final_features)[0]
-        
-        # Inverse transform to get original string labels using your loaded encoders
-        fraud_encoder = label_encoders['fraud_flag']
-        txn_encoder = label_encoders['transaction_type']
-        
-        fraud_result_string = fraud_encoder.inverse_transform([fraud_pred])[0]
-        txn_result_string = txn_encoder.inverse_transform([txn_pred])[0]
-        
-        # Display Results using the dynamically decoded strings
-        st.subheader("Results:")
-        
-        # Optional: Add a little color coding for Fraud!
-        if fraud_result_string == "Fraud":
-            st.error(f"**Fraud Status:** {fraud_result_string} 🚨")
-        else:
-            st.success(f"**Fraud Status:** {fraud_result_string} ✅")
+    if not txn_text.strip():
+        st.warning("Please enter a transaction description first.")
+    else:
+        with st.spinner("Analyzing transaction..."):
+            # Process input
+            cleaned_text = clean_text(txn_text)
             
-        st.info(f"**Transaction Type:** {txn_result_string}")
+            # SBERT outputs a 2D array of shape (1, 768)
+            text_features = get_sbert_embedding(cleaned_text)
+            
+            # Use ONLY the text features to match the 768 requirement
+            final_features = text_features
+            
+            # Predict (Returns the encoded numerical class)
+            fraud_pred = fraud_model.predict(final_features)[0]
+            txn_pred = txn_model.predict(final_features)[0]
+            
+            # Inverse transform to get original string labels using your loaded encoders
+            fraud_encoder = label_encoders['fraud_flag']
+            txn_encoder = label_encoders['transaction_type']
+            
+            fraud_result_string = fraud_encoder.inverse_transform([fraud_pred])[0]
+            txn_result_string = txn_encoder.inverse_transform([txn_pred])[0]
+            
+            # Display Results using the dynamically decoded strings
+            st.subheader("Results:")
+            
+            # Color coding for Fraud!
+            if fraud_result_string == "Fraud":
+                st.error(f"**Fraud Status:** {fraud_result_string} 🚨")
+            else:
+                st.success(f"**Fraud Status:** {fraud_result_string} ✅")
+                
+            st.info(f"**Transaction Type:** {txn_result_string}")
